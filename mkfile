@@ -6,6 +6,6 @@ OFILES=statuswin.$O
 
 BIN=$home/bin/$objtype
 
-CFLAGS=-www
+CFLAGS=-FTVw
 
 </sys/src/cmd/mkone

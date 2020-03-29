@@ -72,6 +72,7 @@ void
 refreshwin(void)
 {
 	getlines();
+	if(linescount == 0) return;
 	win = erealloc(win, linescount*sizeof(win[0]));
 	for(int i=0; i<linescount; i++){
 		win[i].r = Rect(0,0,0,0);
@@ -117,6 +118,7 @@ redraw(Image *screen)
 	geometry();	
 	int i;
 	draw(screen, screen->r, color, nil, ZP);
+	if(linescount == 0) return;
 	for(i=0; i<linescount; i++)
 		drawwin(i);
 }
