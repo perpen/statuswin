@@ -13,7 +13,6 @@ struct Win {
 	Rectangle r;
 };
 
-Reprog  *exclude  = nil;
 Win *win;
 int linescount;
 int rows, cols;
@@ -22,6 +21,7 @@ char *path;
 // Set by getlines()
 char *lines[128];
 int linescount;
+Reprog *seprx = nil;
 
 enum {
 	PAD = 3,
@@ -53,19 +53,23 @@ getlines(void) {
 	if(n == Bsize) fprintf(stderr, "content truncated\n");
 	buf[n] = '\0';
 
-	int count = 0;
-	char *old = buf;
-	for(char *s = buf; *s != 0; s++) {
-		if(*s == '\n') {
-			*s = '\0';
-			lines[count++] = old;
-			s++;
-			// skip empty lines
-			for(; *s == '\n'; s++) ;
-			old = s;
-		}
+	char *cur = buf;
+	printf("cur=%s\n", cur);
+	int count = 0, found;
+	Resub match; //FIXME user may use groups
+	for(;;) {
+		found = regexec(seprx, cur, &match, 1);
+		if(!found) break;
+		*match.sp = '\0';
+		lines[count++] = buf;
+		cur = match.ep;
 	}
 	linescount = count;
+
+	for(int i=0; i<linescount; i++){
+		printf("line %d: %s\n", i, lines[i]);
+	}
+	exits("printed");
 }
 
 void
@@ -135,16 +139,19 @@ eresized(int new)
 void
 usage(void)
 {
-	fprint(2, "usage: statuswin path\n");
+	fprint(2, "usage: statuswin path seprx\n");
 	exits("usage");
 }
 
 void
 main(int argc, char **argv)
 {
-	if(argc != 2)
+	if(argc != 3)
 		usage();
-	path = argv[1];
+	path = argv[0];
+	seprx = regcomp(argv[1]);
+	if(seprx == NULL) exits("invalid regex");
+	printf("path=%s seprx=%x\n", path, seprx);
 
 	char *fontname = nil;
 	if(initdraw(0, fontname, "statuswin") < 0)

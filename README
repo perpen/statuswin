@@ -1,2 +1,5 @@
 Displays lines from file passed on cli, graphics code copied
 from stats(1)
+
+watch *.c -- mk
+watch 6.out -- 6.out /mnt/term/home/henri/.tmux-bar ' *\| *'
