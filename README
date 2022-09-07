@@ -3,3 +3,4 @@ from stats(1)
 
 watch *.c -- mk
 watch 6.out -- 6.out /mnt/term/home/henri/.tmux-bar ' *\| *'
+acid -l acidfile 6.out

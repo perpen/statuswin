@@ -14,7 +14,6 @@ struct Win {
 };
 
 Win *win;
-int linescount;
 int rows, cols;
 Image *color;
 char *path;
@@ -22,6 +21,8 @@ char *path;
 char *lines[128];
 int linescount;
 Reprog *seprx = nil;
+#define MAX 2048
+char buf[MAX + 1];
 
 enum {
 	PAD = 3,
@@ -39,37 +40,46 @@ erealloc(void *v, ulong n)
 
 void
 getlines(void) {
+	int n;
 	int file = open(path, OREAD);
 	if(file == -1) {
 		sysfatal("cannot open");
 	}
-	int n;
-	int off = seek(file, 0, 0);
-	if(off == -1) sysfatal("unable to seek");
-	char buf[Bsize];
-	n = read(file, buf, Bsize);
+	int sz = seek(file, 0, 2);
+	if(sz == -1) sysfatal("cannot seek");
+//	printf("sz=%d\n", sz);
+
+	int max = MAX;
+	n = pread(file, buf, sz, 0);
 	if(n == -1) sysfatal("cannot read");
+//	printf("n=%d\n", n); 
 	close(file);
-	if(n == Bsize) fprintf(stderr, "content truncated\n");
+	if(n == max) fprintf(stderr, "content truncated at %d\n", max);
 	buf[n] = '\0';
 
 	char *cur = buf;
-	printf("cur=%s\n", cur);
 	int count = 0, found;
-	Resub match; //FIXME user may use groups
+	Resub match; //FIXME
 	for(;;) {
+//		printf("loop: %s\n", cur);
+		lines[count++] = cur;
+		memset(&match, 0, sizeof(match));
 		found = regexec(seprx, cur, &match, 1);
-		if(!found) break;
-		*match.sp = '\0';
-		lines[count++] = buf;
+		if(!found){
+			break;
+		}
+//		printf("m0=%s\n", match.sp);
+		*(match.sp) = '\0';
 		cur = match.ep;
 	}
 	linescount = count;
 
+	if(0){
 	for(int i=0; i<linescount; i++){
 		printf("line %d: %s\n", i, lines[i]);
 	}
-	exits("printed");
+//	exits("printed");
+	}
 }
 
 void
@@ -148,10 +158,14 @@ main(int argc, char **argv)
 {
 	if(argc != 3)
 		usage();
-	path = argv[0];
-	seprx = regcomp(argv[1]);
+	path = argv[1];
+	printf("path=%s  sep=%s\n", path, argv[2]);
+	seprx = regcomp(argv[2]);
 	if(seprx == NULL) exits("invalid regex");
 	printf("path=%s seprx=%x\n", path, seprx);
+
+//	getlines();
+//	exits("test");
 
 	char *fontname = nil;
 	if(initdraw(0, fontname, "statuswin") < 0)
