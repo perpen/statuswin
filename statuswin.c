@@ -46,12 +46,13 @@ getlines(void) {
 	int n;
 	int off = seek(file, 0, 0);
 	if(off == -1) sysfatal("unable to seek");
-	char buf[Bsize];
+	char buf[Bsize+1];
 	n = read(file, buf, Bsize);
 	if(n == -1) sysfatal("cannot read");
 	close(file);
 	if(n == Bsize) fprintf(stderr, "content truncated\n");
-	buf[n] = '\0';
+	buf[n] = '\n';
+	buf[n+1] = '\0';
 
 	int count = 0;
 	char *old = buf;
@@ -83,11 +84,21 @@ void
 drawwin(int i)
 {
 	char *line = lines[i];
+	int linewidth = stringwidth(font, line);
+	int off = Dx(screen->r) - linewidth - MARGIN*3; 
+
+	int fd = open("/dev/wctl", OWRITE);
+	if(fd >= 0){
+		int minx = screen->r.max.x - linewidth - MARGIN*5;
+		fprint(fd, "resize -minx %d\n", minx);
+		close(fd);
+	}
+
 	draw(screen, win[i].r, color, nil, ZP);
-	_string(screen, addpt(win[i].r.min, Pt(2,0)), display->black, ZP,
+	_string(screen, addpt(win[i].r.min, Pt(off, 0)), display->black, ZP,
 		font, line, nil, strlen(line), 
 		win[i].r, nil, ZP, SoverD);
-	border(screen, win[i].r, 1, display->black, ZP);	
+	border(screen, win[i].r, 1, display->black, ZP);
 }
 
 void
